@@ -1,0 +1,34 @@
+name: Set Admin Claim
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set-claim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Firebase Admin
+        run: npm install firebase-admin
+
+      - name: Run Script
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          node -e "
+          const admin = require('firebase-admin');
+          const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT);
+          admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+          const email = 'sajidtaha443@gmail.com';
+          admin.auth().getUserByEmail(email)
+            .then(user => admin.auth().setCustomUserClaims(user.uid, { admin: true }))
+            .then(() => { console.log('✅ Admin claim set for ' + email); process.exit(0); })
+            .catch(err => { console.error('❌ Error:', err.message); process.exit(1); });
+          "
